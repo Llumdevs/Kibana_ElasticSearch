@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="description" content="Búsqueda de libros - Elasticsearch"/>
+  <meta name="author" content="Luz Vicent"/>
+  <title>Búsqueda de Libros</title>
+
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+    integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous"/>
+
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+
+  <style>
+    :root {
+      --bg:      #0e0e0e;
+      --surface: #161616;
+      --border:  #2a2a2a;
+      --accent:  #c8a96e;
+      --accent2: #e8c99e;
+      --text:    #e8e4dc;
+      --muted:   #888;
+      --error:   #e05a5a;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+    }
+
+    .jumbotron {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      border-radius: 0;
+      margin-bottom: 2.5rem;
+      padding: 3rem 2rem;
+      text-align: center;
+    }
+
+    .jumbotron h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.8rem;
+      color: var(--accent);
+      letter-spacing: -1px;
+      font-weight: 700;
+    }
+
+    .jumbotron p {
+      color: var(--muted);
+      font-size: 0.8rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 0;
+    }
+
+    .search-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1.8rem 2rem;
+      margin-bottom: 2rem;
+    }
+
+    label small {
+      color: var(--muted);
+      font-size: 0.65rem;
+      letter-spacing: 2px;
+    }
+
+    .form-control, select.form-control {
+      background: var(--bg) !important;
+      border: 1px solid var(--border);
+      color: var(--text) !important;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.85rem;
+      border-radius: 2px;
+    }
+
+    .form-control:focus, select.form-control:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 0.15rem rgba(200,169,110,0.2);
+      background: var(--bg) !important;
+      color: var(--text) !important;
+    }
+
+    select.form-control option {
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .btn-buscar {
+      background: var(--accent);
+      color: var(--bg);
+      border: none;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.8rem;
+      font-weight: 500;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      border-radius: 2px;
+      transition: background 0.2s;
+    }
+
+    .btn-buscar:hover { background: var(--accent2); color: var(--bg); }
+
+    #range-row { display: none; }
+    #range-row.visible { display: flex; gap: 1rem; }
+
+    .result-info {
+      font-size: 0.72rem;
+      color: var(--muted);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .result-info span { color: var(--accent); font-weight: 700; }
+
+    .book-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1rem 1.3rem;
+      margin-bottom: 0.8rem;
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      transition: border-color 0.2s;
+    }
+
+    .book-card:hover { border-color: var(--accent); }
+
+    .book-cover {
+      width: 48px;
+      height: 68px;
+      object-fit: cover;
+      border-radius: 2px;
+      flex-shrink: 0;
+      background: var(--border);
+    }
+
+    .book-cover-placeholder {
+      width: 48px;
+      height: 68px;
+      background: var(--border);
+      border-radius: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      flex-shrink: 0;
+    }
+
+    .book-info { flex: 1; }
+    .book-info h5 {
+      font-family: 'Playfair Display', serif;
+      font-size: 0.95rem;
+      color: var(--text);
+      margin-bottom: 0.2rem;
+    }
+    .book-info p      { font-size: 0.75rem; color: var(--muted); margin-bottom: 0.1rem; }
+    .book-info p span { color: var(--accent2); }
+
+    .book-isbn {
+      font-size: 0.65rem;
+      color: var(--muted);
+      letter-spacing: 1px;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .no-results {
+      text-align: center;
+      padding: 3rem;
+      color: var(--muted);
+      font-size: 0.8rem;
+      letter-spacing: 1px;
+    }
+
+    footer {
+      margin-top: 4rem;
+      padding: 2rem 0 1.5rem;
+      border-top: 1px solid var(--border);
+      text-align: center;
+    }
+
+    .logo-circle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      border: 1.5px solid var(--accent);
+      font-size: 1.5rem;
+      filter: grayscale(1) sepia(1) saturate(2) hue-rotate(5deg) brightness(1.1);
+      margin-bottom: 0.6rem;
+      transition: box-shadow 0.3s;
+    }
+
+    .logo-circle:hover { box-shadow: 0 0 18px rgba(200,169,110,0.35); }
+
+    .footer-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      color: var(--accent);
+      letter-spacing: 2px;
+      margin: 0.2rem 0;
+    }
+
+    .footer-divider {
+      width: 40px;
+      height: 1px;
+      background: var(--border);
+      margin: 0.6rem auto;
+    }
+
+    .footer-meta {
+      font-size: 0.65rem;
+      color: var(--muted);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+
+<div class="jumbotron">
+  <h1>Librería ELastic</h1>
+  <p>Elasticsearch · Kibana</p>
+</div>
+
+<div class="container">
+  <div class="search-card">
+
+    <div class="form-row align-items-end">
+      <div class="col-md-4 mb-3">
+        <label><small>Buscar por</small></label>
+        <select class="form-control" id="campo" onchange="toggleRangeRow()">
+          <option value="todo">Búsqueda general</option>
+          <option value="titulo">Título</option>
+          <option value="autor">Autor</option>
+          <option value="anyoPublicacion">Año de publicación</option>
+          <option value="editorial">Editorial</option>
+        </select>
+      </div>
+
+      <div class="col-md-6 mb-3" id="input-wrapper">
+        <label><small>Término de búsqueda</small></label>
+        <input type="text" class="form-control" id="keyword" placeholder="Escribe aquí..." onkeyup="buscar()"/>
+      </div>
+
+      <div class="col-md-2 mb-3">
+        <button class="btn btn-buscar btn-block" onclick="buscar()">Buscar</button>
+      </div>
+    </div>
+
+    <div id="range-row" class="form-row mt-1">
+      <div class="col-md-4">
+        <label><small>Año desde</small></label>
+        <input type="text" class="form-control" id="anyo-desde" placeholder="ej: 1990" onkeyup="buscar()"/>
+      </div>
+      <div class="col-md-4">
+        <label><small>Año hasta</small></label>
+        <input type="text" class="form-control" id="anyo-hasta" placeholder="ej: 2005" onkeyup="buscar()"/>
+      </div>
+    </div>
+
+  </div>
+
+  <div id="result-info"></div>
+  <div id="response"></div>
+
+  <footer>
+    <div class="logo-circle">📚</div>
+    <div class="footer-name">Luz Vicent</div>
+    <div class="footer-divider"></div>
+    <div class="footer-meta">Elasticsearch · Books Dataset · 2026</div>
+  </footer>
+</div>
+
+<script>
+  const ES    = 'http://localhost:9200';
+  const INDEX = 'books';
+
+  /* Mapeo campo → id del Search Template guardado en Elasticsearch */
+  const TEMPLATES = {
+    todo:             { id: 'buscar_general',    params: (t)       => ({ texto: t }) },
+    titulo:           { id: 'buscar_titulo',    params: (t)       => ({ titulo: t }) },
+    autor:            { id: 'buscar_autor',     params: (t)       => ({ autor: t }) },
+    editorial:        { id: 'buscar_editorial', params: (t)       => ({ editorial: t }) },
+    anyoPublicacion:  { id: 'buscar_anyo',      params: (_, d, h) => ({ anyo_desde: d || '0001', anyo_hasta: h || '9999' }) }
+  };
+
+  function toggleRangeRow() {
+    const campo     = document.getElementById('campo').value;
+    const rangeRow  = document.getElementById('range-row');
+    const inputWrap = document.getElementById('input-wrapper');
+    if (campo === 'anyoPublicacion') {
+      rangeRow.classList.add('visible');
+      inputWrap.style.display = 'none';
+    } else {
+      rangeRow.classList.remove('visible');
+      inputWrap.style.display = 'block';
+    }
+  }
+
+  async function buscar() {
+    const campo   = document.getElementById('campo').value;
+    const termino = (document.getElementById('keyword').value || '').trim();
+    const desde   = (document.getElementById('anyo-desde').value || '').trim();
+    const hasta   = (document.getElementById('anyo-hasta').value || '').trim();
+
+    if (campo !== 'anyoPublicacion' && !termino) {
+      document.getElementById('response').innerHTML    = '';
+      document.getElementById('result-info').innerHTML = '';
+      return;
+    }
+
+    const template = TEMPLATES[campo];
+
+    try {
+      const response = await fetch(`${ES}/${INDEX}/_search/template`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json;charset=UTF-8' },
+        body: JSON.stringify({
+          id:     template.id,
+          params: template.params(termino, desde, hasta)
+        })
+      });
+
+      if (!response.ok) {
+        const text = await response.text().catch(() => '');
+        console.error('HTTP error', response.status, text);
+        document.getElementById('response').innerHTML =
+          `<p style="color:var(--error)">Error HTTP: ${response.status}</p>`;
+        return;
+      }
+
+      const results = await response.json();
+      renderResults(results);
+
+    } catch (err) {
+      console.error('Fetch error:', err);
+      document.getElementById('response').innerHTML =
+        `<p style="color:var(--error)">Error al conectar con Elasticsearch: ${err.message || err}</p>`;
+    }
+  }
+
+  function renderResults(data) {
+    const hits  = data.hits?.hits || [];
+    const total = data.hits?.total?.value ?? hits.length;
+    const took  = data.took ?? 0;
+
+    document.getElementById('result-info').innerHTML =
+      `<p class="result-info"><span>${total}</span> resultado${total !== 1 ? 's' : ''} en ${took}ms</p>`;
+
+    if (hits.length === 0) {
+      document.getElementById('response').innerHTML = '<div class="no-results">— Sin resultados —</div>';
+      return;
+    }
+
+    let html = '';
+    for (const hit of hits) {
+      const s    = hit._source;
+      const anyo = s.anyoPublicacion ? new Date(s.anyoPublicacion).getFullYear() : '—';
+      const img  = s.image_URL_S
+        ? `<img class="book-cover" src="${s.image_URL_S}" alt="portada"
+               onerror="this.outerHTML='<div class=\\'book-cover-placeholder\\'>📖</div>'">`
+        : '<div class="book-cover-placeholder">📖</div>';
+
+      html += `
+        <div class="book-card">
+          ${img}
+          <div class="book-info">
+            <h5>${s.titulo || '—'}</h5>
+            <p>Autor: <span>${s.autor || '—'}</span></p>
+            <p>Editorial: <span>${s.editorial || '—'}</span></p>
+            <p>Año: <span>${anyo}</span></p>
+          </div>
+          <div class="book-isbn">${s.isbn || ''}</div>
+        </div>`;
+    }
+
+    document.getElementById('response').innerHTML = html;
+  }
+</script>
+
+</body>
+</html>

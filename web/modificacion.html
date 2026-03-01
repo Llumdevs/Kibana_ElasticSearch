@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="description" content="Edición de libros - Elasticsearch"/>
+  <meta name="author" content="Luz Vicent"/>
+  <title>Editar Libro</title>
+
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+    integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous"/>
+
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+
+  <style>
+    :root {
+      --bg:      #0e0e0e;
+      --surface: #161616;
+      --border:  #2a2a2a;
+      --accent:  #c8a96e;
+      --accent2: #e8c99e;
+      --text:    #e8e4dc;
+      --muted:   #888;
+      --error:   #e05a5a;
+      --success: #6ec89a;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+    }
+
+    /* ---- Jumbotron ---- */
+    .jumbotron {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      border-radius: 0;
+      margin-bottom: 2.5rem;
+      padding: 3rem 2rem;
+      text-align: center;
+    }
+
+    .jumbotron h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.8rem;
+      color: var(--accent);
+      letter-spacing: -1px;
+      font-weight: 700;
+    }
+
+    .jumbotron p {
+      color: var(--muted);
+      font-size: 0.8rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 0.8rem;
+    }
+
+    .jumbotron a {
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.75rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      border: 1px solid var(--accent);
+      padding: 0.35rem 1rem;
+      border-radius: 2px;
+      transition: all 0.2s;
+    }
+
+    .jumbotron a:hover {
+      background: var(--accent);
+      color: var(--bg);
+    }
+
+    /* ---- Panel ---- */
+    .panel-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1.8rem 2rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .panel-title {
+      font-size: 0.65rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 1.2rem;
+      padding-bottom: 0.6rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    label small {
+      color: var(--muted);
+      font-size: 0.65rem;
+      letter-spacing: 2px;
+    }
+
+    .form-control {
+      background: var(--bg) !important;
+      border: 1px solid var(--border);
+      color: var(--text) !important;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.85rem;
+      border-radius: 2px;
+      margin-bottom: 1rem;
+    }
+
+    .form-control:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 0.15rem rgba(200,169,110,0.2);
+      background: var(--bg) !important;
+      color: var(--text) !important;
+    }
+
+    .form-control:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* ---- Botones ---- */
+    .btn-buscar {
+      background: var(--accent);
+      color: var(--bg);
+      border: none;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.8rem;
+      font-weight: 500;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      border-radius: 2px;
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+
+    .btn-buscar:hover { background: var(--accent2); color: var(--bg); }
+
+    .btn-actualizar {
+      width: 100%;
+      background: transparent;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.8rem;
+      font-weight: 500;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      border-radius: 2px;
+      padding: 0.6rem;
+      transition: all 0.2s;
+    }
+
+    .btn-actualizar:hover { background: var(--accent); color: var(--bg); }
+
+    /* ---- Status ---- */
+    .status {
+      font-size: 0.75rem;
+      margin-top: 0.6rem;
+      min-height: 1rem;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .status.ok    { color: var(--success); }
+    .status.error { color: var(--error); }
+    .status.info  { color: var(--muted); }
+
+    /* ---- Cover preview ---- */
+    .cover-preview {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .cover-preview .form-control { margin-bottom: 0; }
+
+    .cover-placeholder {
+      width: 50px;
+      height: 70px;
+      background: var(--border);
+      border-radius: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      flex-shrink: 0;
+    }
+
+    /* ---- Panel edición oculto ---- */
+    #fields-panel { display: none; }
+    #fields-panel.visible { display: block; }
+
+    /* ---- Footer ---- */
+    footer {
+      margin-top: 4rem;
+      padding: 2rem 0 1.5rem;
+      border-top: 1px solid var(--border);
+      text-align: center;
+    }
+
+    .logo-circle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      border: 1.5px solid var(--accent);
+      font-size: 1.5rem;
+      filter: grayscale(1) sepia(1) saturate(2) hue-rotate(5deg) brightness(1.1);
+      margin-bottom: 0.6rem;
+      transition: box-shadow 0.3s;
+    }
+
+    .logo-circle:hover { box-shadow: 0 0 18px rgba(200,169,110,0.35); }
+
+    .footer-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      color: var(--accent);
+      letter-spacing: 2px;
+      margin: 0.2rem 0;
+    }
+
+    .footer-divider {
+      width: 40px;
+      height: 1px;
+      background: var(--border);
+      margin: 0.6rem auto;
+    }
+
+    .footer-meta {
+      font-size: 0.65rem;
+      color: var(--muted);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+
+<!-- CABECERA -->
+<div class="jumbotron">
+  <h1>Editor de Libros</h1>
+  <p>Elasticsearch · Kibana</p>
+  <a href="busqueda.html">← Volver a búsqueda</a>
+</div>
+
+<div class="container">
+
+  <!-- PANEL BÚSQUEDA POR ISBN -->
+  <div class="panel-card">
+    <div class="panel-title">Buscar libro por ISBN</div>
+    <div class="form-row align-items-end">
+      <div class="col-md-8">
+        <label><small>ISBN</small></label>
+        <input type="text" class="form-control" id="isbn-input" placeholder="ej: 195153448"
+          onkeydown="if(event.key==='Enter') buscarISBN()"/>
+      </div>
+      <div class="col-md-4 mb-4">
+        <button class="btn btn-buscar btn-block" onclick="buscarISBN()">Buscar</button>
+      </div>
+    </div>
+    <div class="status info" id="status-busqueda"></div>
+  </div>
+
+  <!-- PANEL EDICIÓN -->
+  <div class="panel-card" id="fields-panel">
+    <div class="panel-title">Datos del libro — edita los campos y pulsa Actualizar</div>
+
+    <input type="hidden" id="doc-id"/>
+
+    <div class="form-row">
+      <div class="col-md-6">
+        <label><small>ISBN</small></label>
+        <input type="text" class="form-control" id="f-isbn" disabled/>
+      </div>
+      <div class="col-md-6">
+        <label><small>Año de publicación</small></label>
+        <input type="text" class="form-control" id="f-anyo" placeholder="ej: 1999"/>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label><small>Título</small></label>
+      <input type="text" class="form-control" id="f-titulo"/>
+    </div>
+
+    <div class="form-row">
+      <div class="col-md-6">
+        <label><small>Autor</small></label>
+        <input type="text" class="form-control" id="f-autor"/>
+      </div>
+      <div class="col-md-6">
+        <label><small>Editorial</small></label>
+        <input type="text" class="form-control" id="f-editorial"/>
+      </div>
+    </div>
+
+    <label><small>Portada (URL pequeña)</small></label>
+    <div class="cover-preview">
+      <div class="cover-placeholder" id="cover-placeholder">📖</div>
+      <input type="text" class="form-control" id="f-url-s" placeholder="http://..."/>
+    </div>
+
+    <div class="form-row">
+      <div class="col-md-6">
+        <label><small>Portada (URL mediana)</small></label>
+        <input type="text" class="form-control" id="f-url-m" placeholder="http://..."/>
+      </div>
+      <div class="col-md-6">
+        <label><small>Portada (URL grande)</small></label>
+        <input type="text" class="form-control" id="f-url-l" placeholder="http://..."/>
+      </div>
+    </div>
+
+    <button class="btn-actualizar" onclick="actualizarLibro()">Actualizar datos</button>
+    <div class="status" id="status-update"></div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="logo-circle">📚</div>
+    <div class="footer-name">Luz Vicent</div>
+    <div class="footer-divider"></div>
+    <div class="footer-meta">Elasticsearch · Books Dataset · 2026</div>
+  </footer>
+
+</div>
+
+<script>
+  const ES    = 'http://localhost:9200';
+  const INDEX = 'books';
+
+  async function buscarISBN() {
+    const isbn   = document.getElementById('isbn-input').value.trim();
+    const status = document.getElementById('status-busqueda');
+    const panel  = document.getElementById('fields-panel');
+
+    if (!isbn) {
+      status.textContent = 'Introduce un ISBN.';
+      status.className = 'status error';
+      return;
+    }
+
+    status.textContent = 'Buscando...';
+    status.className = 'status info';
+    panel.classList.remove('visible');
+
+    try {
+      const res  = await fetch(`${ES}/${INDEX}/_search`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: { term: { isbn } } })
+      });
+      const data = await res.json();
+      const hits = data.hits?.hits || [];
+
+      if (hits.length === 0) {
+        status.textContent = 'No se ha encontrado ningún libro con ese ISBN.';
+        status.className = 'status error';
+        return;
+      }
+
+      rellenarFormulario(hits[0]._id, hits[0]._source);
+      status.textContent = 'Libro encontrado.';
+      status.className = 'status ok';
+      panel.classList.add('visible');
+      panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    } catch (e) {
+      status.textContent = 'Error al conectar con Elasticsearch.';
+      status.className = 'status error';
+    }
+  }
+
+  function rellenarFormulario(id, s) {
+    document.getElementById('doc-id').value      = id;
+    document.getElementById('f-isbn').value      = s.isbn || '';
+    document.getElementById('f-titulo').value    = s.titulo || '';
+    document.getElementById('f-autor').value     = s.autor || '';
+    document.getElementById('f-editorial').value = s.editorial || '';
+    document.getElementById('f-url-s').value     = s.image_URL_S || '';
+    document.getElementById('f-url-m').value     = s.image_URL_M || '';
+    document.getElementById('f-url-l').value     = s.image_URL_L || '';
+
+    const anyo = s.anyoPublicacion ? new Date(s.anyoPublicacion).getFullYear() : '';
+    document.getElementById('f-anyo').value = anyo;
+
+    actualizarPortada(s.image_URL_S);
+
+    document.getElementById('f-url-s').addEventListener('input', e => {
+      actualizarPortada(e.target.value);
+    });
+  }
+
+  function actualizarPortada(url) {
+    const el = document.getElementById('cover-placeholder');
+    el.innerHTML = url
+      ? `<img src="${url}" alt="portada" onerror="this.outerHTML='📖'"
+           style="width:50px;height:70px;object-fit:cover;border-radius:2px">`
+      : '📖';
+  }
+
+  async function actualizarLibro() {
+    const id     = document.getElementById('doc-id').value;
+    const status = document.getElementById('status-update');
+    const anyoRaw = document.getElementById('f-anyo').value.trim();
+
+    const body = {
+      doc: {
+        titulo:          document.getElementById('f-titulo').value.trim(),
+        autor:           document.getElementById('f-autor').value.trim(),
+        editorial:       document.getElementById('f-editorial').value.trim(),
+        anyoPublicacion: anyoRaw ? `${anyoRaw}-01-01T00:00:00.000Z` : null,
+        image_URL_S:     document.getElementById('f-url-s').value.trim(),
+        image_URL_M:     document.getElementById('f-url-m').value.trim(),
+        image_URL_L:     document.getElementById('f-url-l').value.trim(),
+      }
+    };
+
+    status.textContent = 'Actualizando...';
+    status.className = 'status info';
+
+    try {
+      const res  = await fetch(`${ES}/${INDEX}/_update/${id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+
+      if (data.result === 'updated' || data.result === 'noop') {
+        status.textContent = 'Libro actualizado correctamente.';
+        status.className = 'status ok';
+      } else {
+        status.textContent = 'No se pudo actualizar. Revisa la consola.';
+        status.className = 'status error';
+        console.error(data);
+      }
+    } catch (e) {
+      status.textContent = 'Error al conectar con Elasticsearch.';
+      status.className = 'status error';
+    }
+  }
+</script>
+
+</body>
+</html>
