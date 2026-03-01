@@ -1,0 +1,50 @@
+{
+  "description": "Ingest pipeline books.csv",
+  "processors": [
+    {
+      "csv": {
+        "field": "message",
+        "target_fields": [
+          "isbn",
+          "titulo",
+          "autor",
+          "anyoPublicacion",
+          "editorial",
+          "image_URL_S",
+          "image_URL_M",
+          "image_URL_L"
+        ],
+        "separator": ";",
+        "quote": "\"",
+        "ignore_missing": true
+      }
+    },
+    {
+      "trim": {
+        "field": "anyoPublicacion",
+        "ignore_missing": true
+      }
+    },
+    {
+      "script": {
+        "description": "Elimina el campo anyoPublicacion si su valor no es un año válido",
+        "lang": "painless",
+        "source": "if (!ctx.containsKey('anyoPublicacion') || ctx.anyoPublicacion == null) return; try { int year = Integer.parseInt(ctx.anyoPublicacion.trim()); if (year <= 0) { ctx.remove('anyoPublicacion'); } else { ctx.anyoPublicacion = String.valueOf(year); } } catch (Exception e) { ctx.remove('anyoPublicacion'); }"
+      }
+    },
+    {
+      "date": {
+        "field": "anyoPublicacion",
+        "target_field": "anyoPublicacion",
+        "formats": ["yyyy"],
+        "ignore_failure": true
+      }
+    },
+    {
+      "remove": {
+        "field": "message",
+        "ignore_failure": true
+      }
+    }
+  ]
+}

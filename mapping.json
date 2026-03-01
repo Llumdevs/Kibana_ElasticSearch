@@ -1,0 +1,44 @@
+{
+  "properties": {
+    "anyoPublicacion": {
+      "type": "date",
+      "format": "strict_date_optional_time||yyyy"
+    },
+    "autor": {
+      "type": "text",
+      "fields": {
+        "keyword": {
+          "type": "keyword"
+        }
+      }
+    },
+    "editorial": {
+      "type": "text",
+      "fields": {
+        "keyword": {
+          "type": "keyword"
+        }
+      }
+    },
+    "image_URL_L": {
+      "type": "keyword"
+    },
+    "image_URL_M": {
+      "type": "keyword"
+    },
+    "image_URL_S": {
+      "type": "keyword"
+    },
+    "isbn": {
+      "type": "keyword"
+    },
+    "titulo": {
+      "type": "text",
+      "fields": {
+        "keyword": {
+          "type": "keyword"
+        }
+      }
+    }
+  }
+}
