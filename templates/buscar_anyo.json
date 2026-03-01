@@ -1,0 +1,17 @@
+PUT _scripts/buscar_editorial
+{
+  "script": {
+    "lang": "mustache",
+    "source": {
+      "query": {
+        "match": {
+          "editorial": {
+            "query": "{{editorial}}",
+            "operator": "or",
+            "minimum_should_match": "75%"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,14 @@
+PUT _scripts/buscar_general
+{
+  "script": {
+    "lang": "mustache",
+    "source": {
+      "query": {
+        "multi_match": {
+          "query": "{{texto}}",
+          "fields": ["titulo", "autor", "editorial"]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,17 @@
+PUT _scripts/buscar_anyo
+{
+  "script": {
+    "lang": "mustache",
+    "source": {
+      "query": {
+        "range": {
+          "anyoPublicacion": {
+            "gte": "{{anyo_desde}}",
+            "lte": "{{anyo_hasta}}",
+            "format": "yyyy"
+          }
+        }
+      }
+    }
+  }
+}

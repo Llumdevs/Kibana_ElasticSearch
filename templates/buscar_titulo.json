@@ -1,0 +1,13 @@
+PUT _scripts/buscar_autor
+{
+  "script": {
+    "lang": "mustache",
+    "source": {
+      "query": {
+        "match_phrase": {
+          "autor": "{{autor}}"
+        }
+      }
+    }
+  }
+}
